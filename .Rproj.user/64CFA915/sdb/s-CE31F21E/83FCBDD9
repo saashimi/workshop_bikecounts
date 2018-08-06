@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "* Datascience workshop example project\n\nThis project is a data processing and visualization exercise using Portland Bike Count data.",
+    "created" : 1533586820812.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3355364046",
+    "id" : "83FCBDD9",
+    "lastKnownWriteTime" : 1533587622,
+    "last_content_update" : 1533587622832,
+    "path" : "~/KS_personal/workshop_bikecounts/README.md",
+    "project_path" : "README.md",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "markdown"
+}
