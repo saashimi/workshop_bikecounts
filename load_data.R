@@ -8,6 +8,10 @@ load_bridge <- function(bridge_name) {
   return(bridge_data)
 }
 
+load_bridge_bind <-  function(bridge_name) {
+  # create empty dataframe
+}
+
 total_days <- function(bridge_name) {
   data <- bridge_name %>%
     select(total) %>%
@@ -32,4 +36,12 @@ average_monthly <- function(bridge_name) {
 }
 
 bridges <- c("Hawthorne", "Tilikum", "Steel")
-lapply(bridges, load_bridge)
+all_bridges <-  lapply(bridges, load_bridge)
+Hawthorne <- all_bridges[1]
+Tilikum <-  all_bridges[2]
+Steel <- all_bridges[3]
+
+# Create empty dataframe
+# df <- data.frame(matrix(ncol = 3, nrow = 0))
+# x <- c("date", "westbound", "eastbound", "total")
+# colnames(df) <- x
