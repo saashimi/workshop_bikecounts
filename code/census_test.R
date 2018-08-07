@@ -3,7 +3,7 @@
 
 library(tidycensus)
 library(ggplot2)
-
+#I like this
 ## setup cenus api key
 ## signup your census api key at http://api.census.gov/data/key_signup.html
 census_api_key("8d0ac7abe0ff42aa0f81d17c8f3be7df4cc9a333") # 
