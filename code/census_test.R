@@ -5,9 +5,7 @@ library(tidycensus)
 library(ggplot2)
 source("SECRETS.R")
 
-## setup cenus api key
-## signup your census api key at http://api.census.gov/data/key_signup.html
-census_api_key(APIKEY) # 
+census_api_key(APIKEY)
 portland_tract_medhhinc <- get_acs(geography = "tract", 
                                    year = 2016, # 2012-2016
                                    variables = "B19013_001",  # Median Household Income in the Past 12 Months
