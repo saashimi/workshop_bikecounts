@@ -5,11 +5,8 @@ library(lubridate)
 load_bridge <- function(bridge_name) {
   bridge_data <- read_excel("data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
              sheet = bridge_name, skip = 1)
+  bridge_data <- add_column(bridge_data, name = bridge_name)
   return(bridge_data)
-}
-
-load_bridge_bind <-  function(bridge_name) {
-  # create empty dataframe
 }
 
 total_days <- function(bridge_name) {
@@ -41,7 +38,10 @@ Hawthorne <- all_bridges[1]
 Tilikum <-  all_bridges[2]
 Steel <- all_bridges[3]
 
-# Create empty dataframe
-# df <- data.frame(matrix(ncol = 3, nrow = 0))
-# x <- c("date", "westbound", "eastbound", "total")
-# colnames(df) <- x
+weather_data_csv <- read_csv("data/NCDC-CDO-USC00356750.csv") 
+bind_rows(Hawthorne, Tilikum, Steel)
+
+
+#result <- c(strsplit(str, " "))
+#col_width <- lapply(result, str_length)
+#weather_data_fixed <- read_fwf("data/NCDC-CDO-USC00356750.txt", fwf_widths(col_width[[1]]))
