@@ -1,6 +1,7 @@
 library(readxl)
 library(tidyverse)
 library(lubridate)
+library(leaflet)
 
 load_bridge <- function(bridge_name) {
   bridge_data <- read_excel("data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
@@ -41,26 +42,74 @@ average_monthly <- function(bridge_name) {
 
 bridges <- c("Hawthorne", "Tilikum", "Steel")
 all_bridges <-  lapply(bridges, load_bridge)
-Hawthorne <- all_bridges[1]
-Tilikum <-  all_bridges[2]
-Steel <- all_bridges[3]
+Hawthorne <- all_bridges[[1]] %>%
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`) %>% 
+  mutate(Lat = 45.513180) %>% 
+  mutate(Lng = -122.670602)
+  
+Tilikum <-  all_bridges[2]  %>% 
+  mutate(Lat = 45.504938) %>% 
+  mutate(Lng = -122.667013)  
 
-weather_data_csv <- read_csv("data/NCDC-CDO-USC00356750.csv") 
+Steel <- all_bridges[[3]] %>%
+  select(-c(`River Walk (lower 2-way)`)) %>% 
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`) %>% 
+  mutate(Lat = 45.527574) %>% 
+  mutate(Lng = -122.669062)
+
+weather_data_csv <- read_csv("data/NCDC-CDO-USC00356750.csv") %>% 
+  select(-c(STATION, NAME))
+  
 consolidated_bridge <- bind_rows(Hawthorne, Tilikum, Steel)
+
+bike_counts <- consolidated_bridge %>% 
+  gather(eastbound, westbound, total, key = "type", value = "counts") %>%
+  spread(type, counts)
+
+bikecounts_dow <- bike_counts %>%
+  mutate(dow=wday(date, label=TRUE))
+
+# summarize bike counts by bridge & day-of-week
+bikecounts_dow <- bike_counts %>% 
+  group_by(name, dow) %>% 
+  summarize(avg_daily_counts=mean(total, na.rm = TRUE))
+
+bikecounts_dow %>% 
+  spread(dow, avg_daily_counts)
+
+bikecounts_dow %>% 
+  spread(name, avg_daily_counts)
+
 all_data <- left_join(consolidated_bridge, weather_data_csv, by = c("date" = "DATE"))
 
-bridges <- c("Hawthorne", "Tilikum", "Steel")
-all_bridges <-  lapply(bridges, filter_by_name)
-Hawthorne <- all_bridges[[1]]
-Tilikum <-  all_bridges[[2]]
-Steel <- all_bridges[[3]]
+all_data %>% 
+  group_by(name) %>% 
+  top_n(3, wt=total)
+
+bike_timeseries <- ts(all_data$total, frequency=4, start=c(2012,12))
+plot.ts(bike_timeseries)
+bike_timeseriescomponents <- decompose(bike_timeseries)
 
 
-ggplot(Hawthorne, aes(x=PRCP, y=total)) + geom_point()
-ggplot(Tilikum, aes(x=PRCP, y=total)) + geom_point()
-ggplot(Steel, aes(x=PRCP, y=total)) + geom_point()
+#all_data %>%
+# ggplot(aes(x=PRCP, y=total, color=name)) + 
+# theme_minimal() +
+# geom_point(size=.5) +
+# stat_smooth(method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+#             size=1, color="gray") +
+# labs(title= "Total Bike Counts by Precipitation") +
+# scale_color_brewer(palette="Dark2")
 
+tilikum_open <- all_data %>%
+  filter(name == 'Hawthorne' | name == 'Tilikum') 
 
-#result <- c(strsplit(str, " "))
-#col_width <- lapply(result, str_length)
-#weather_data_fixed <- read_fwf("data/NCDC-CDO-USC00356750.txt", fwf_widths(col_width[[1]]))
+tilikum_open %>%  ggplot(aes(x=date, y=total, color=name)) + 
+  theme_minimal() +
+  geom_point(size=.5) +
+  stat_smooth(method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+              size=1, color="black") +
+  labs(title= "Total Bike Counts over Time") +
+  scale_color_brewer(palette="Dark2")
+  
