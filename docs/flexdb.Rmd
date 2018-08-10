@@ -1,0 +1,91 @@
+---
+title: "PDX Bike Counts"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readxl)
+library(tidyverse)
+library(lubridate)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+load_bridge <- function(bridge_name) {
+  bridge_data <- read_excel(
+    "../data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
+    sheet = bridge_name, skip = 1)
+  bridge_data <- add_column(bridge_data, name = bridge_name) %>%
+  mutate(date = as.Date(date, format = '%m/%d/%Y'))
+  return(bridge_data)
+}
+
+bridges <- c("Hawthorne", "Tilikum", "Steel")
+all_bridges <-  lapply(bridges, load_bridge)
+Hawthorne <- all_bridges[[1]] %>% 
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`) 
+
+Tilikum <-  all_bridges[2]
+
+Steel <- all_bridges[[3]] %>%
+  select(-c(`River Walk (lower 2-way)`)) %>% 
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`)
+
+weather_data_csv <- read_csv("../data/NCDC-CDO-USC00356750.csv") %>% 
+  select(-c(STATION, NAME))
+  
+consolidated_bridge <- bind_rows(Hawthorne, Tilikum, Steel)
+
+all_data <- left_join(consolidated_bridge, weather_data_csv, by = c("date" = "DATE"))
+
+all_data %>%
+ ggplot(aes(x=PRCP, y=total, color=name)) + 
+ theme_minimal() +
+ geom_point(size=.5) +
+ stat_smooth(method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+             size=1, color="black") +
+ labs(title= "Total Bike Counts by Precipitation") +
+ scale_color_brewer(palette="Dark2")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+tilikum_open <- all_data  %>%
+  filter(name == 'Hawthorne' | name == 'Tilikum')  
+
+tilikum_open %>%  ggplot(aes(x=date, y=total, color=name)) + 
+  theme_minimal() +
+  geom_point(size=.5) +
+  stat_smooth(data=subset(all_data, name == "Hawthorne"), method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+              size=1, color="black") +
+  labs(title= "Total Bike Counts over Time") +
+  scale_color_brewer(palette="Dark2")
+
+```
+
+### Chart C
+
+```{r, message=FALSE}
+library(ggfortify)
+Hawthorne_series <- all_data %>%
+  filter(name == "Hawthorne") %>% 
+  select(date, total, name) %>% 
+  group_by(date) 
+
+hawthorne_ts <- ts(Hawthorne_series$total, start=2012, frequency=365)
+autoplot(stl(hawthorne_ts, s.window = 'periodic'), ts.colour = 'blue')
+```
