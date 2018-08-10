@@ -1,11 +1,89 @@
-# Hello, world!
+---
+title: "PDX Bike Count Analysis"
+output: html_document
+---
 by Kevin 
 
-## Heading
-Blah
+This document summarizes the work that was completed during the Introduction to Scientific Computing for Planners, Engineers, and Scientists course offered by 
+PSU in August 2018.
 
-### Subheading
-Blah
+###Data Loading
+We first needed to specify the packages that we would be working with.
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+Next, we created a function that would load bike count data in Excel format.
+Note that the `date` column was mutated in order to simplify later joining with
+weather data.
+
+```{r}
+load_bridge <- function(bridge_name) {
+  bridge_data <- read_excel(
+    "../data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
+    sheet = bridge_name, skip = 1)
+  bridge_data <- add_column(bridge_data, name = bridge_name) %>%
+  mutate(date = as.Date(date, format = '%m/%d/%Y'))
+  return(bridge_data)
+}
+
+bridges <- c("Hawthorne", "Tilikum", "Steel")
+all_bridges <-  lapply(bridges, load_bridge)
+Hawthorne <- all_bridges[[1]] %>% 
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`) 
+
+Tilikum <-  all_bridges[2]
+
+Steel <- all_bridges[[3]] %>%
+  select(-c(`River Walk (lower 2-way)`)) %>% 
+  rename(westbound = `north side (westbound)`) %>%
+  rename(eastbound = `south side (eastbound)`) 
+```
+Next, we needed to join bridge and weather data along the date columns.
+```{r, message=FALSE}
+weather_data_csv <- read_csv("../data/NCDC-CDO-USC00356750.csv") %>% 
+  select(-c(STATION, NAME))
+  
+consolidated_bridge <- bind_rows(Hawthorne, Tilikum, Steel)
+
+all_data <- left_join(consolidated_bridge, weather_data_csv, by = c("date" = "DATE"))
+```
+
+### Visualizing data with ggplot2
+We were able to visualize data using the recommended ggplot package.
+```{r}
+all_data %>%
+ ggplot(aes(x=PRCP, y=total, color=name)) + 
+ theme_minimal() +
+ geom_point(size=.5) +
+ stat_smooth(method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+             size=1, color="black") +
+ labs(title= "Total Bike Counts by Precipitation") +
+ scale_color_brewer(palette="Dark2")
+```
+Also fascinating is the visualized effect of the Tilikum crossing based when
+juxtaposed against the Hawthorne bridge.
+
+```{r}
+tilikum_open <- all_data  %>%
+  filter(name == 'Hawthorne' | name == 'Tilikum')  
+
+tilikum_open %>%  ggplot(aes(x=date, y=total, color=name)) + 
+  theme_minimal() +
+  geom_point(size=.5) +
+  stat_smooth(data=subset(all_data, name == "Hawthorne"), method=lm, se=FALSE, linetype="dashed", aes(group=1), 
+              size=1, color="black") +
+  labs(title= "Total Bike Counts over Time") +
+  scale_color_brewer(palette="Dark2")
+
+bike_series <- all_data %>%
+  select(date, total, name) %>% 
+  group_by(date) %>% 
+  summarize(total = sum(total))
+```
 
 #### Sub-subheading
 Blah
