@@ -2,7 +2,7 @@
 title: "PDX Bike Count Analysis"
 output: html_document
 ---
-by Kevin 
+by Kevin Saavedra
 
 This document summarizes the work that was completed during the Introduction to Scientific Computing for Planners, Engineers, and Scientists course offered by 
 PSU in August 2018.
@@ -53,7 +53,10 @@ all_data <- left_join(consolidated_bridge, weather_data_csv, by = c("date" = "DA
 ```
 
 ### Visualizing data with ggplot2
-We were able to visualize data using the recommended ggplot package.
+We were able to visualize data using the recommended ggplot package. We looked
+at total bicycle ridership counts plotted as a function of total precipitation
+for that day.
+
 ```{r}
 all_data %>%
  ggplot(aes(x=PRCP, y=total, color=name)) + 
@@ -64,8 +67,13 @@ all_data %>%
  labs(title= "Total Bike Counts by Precipitation") +
  scale_color_brewer(palette="Dark2")
 ```
-Also fascinating is the visualized effect of the Tilikum crossing based when
-juxtaposed against the Hawthorne bridge.
+
+We may be used to rain, but not enough for most of us to ride our bikes in it!
+
+### Visualizing the new Tilikum Bridge ridership with the neighboring Hawthorne Bridge.
+
+How does the new bike-and-transit Tilikum Bridge square against the older 
+Hawthorne Bridge? We took a look at that.
 
 ```{r}
 tilikum_open <- all_data  %>%
@@ -78,12 +86,37 @@ tilikum_open %>%  ggplot(aes(x=date, y=total, color=name)) +
               size=1, color="black") +
   labs(title= "Total Bike Counts over Time") +
   scale_color_brewer(palette="Dark2")
-
-bike_series <- all_data %>%
-  select(date, total, name) %>% 
-  group_by(date) %>% 
-  summarize(total = sum(total))
 ```
 
-#### Sub-subheading
-Blah
+There appears to be a noticeable decline in ridership on the Hawthorne Bridge
+after the Tilikum Bridge opened.
+
+### Further investigating the effect of the Tilikum Bridge on the Hawthorne Bridge
+
+We could take a more in-depth look at how the opening of the new Tilikum Bridge
+in 2015 affected ridership on the Hawthorne Bridge. We needed to approach
+the Hawthorne Bridge data as a time series.
+
+We needed to load a new library that will work with this time series data.
+
+```{r, message=FALSE}
+library(ggfortify)
+```
+
+Filtering out for Hawthorne Bridge data, we can then address seasonality.
+
+```{r, message=FALSE}
+Hawthorne_series <- all_data %>%
+  filter(name == "Hawthorne") %>% 
+  select(date, total, name) %>% 
+  group_by(date) 
+
+hawthorne_ts <- ts(Hawthorne_series$total, start=2012, frequency=365)
+autoplot(stl(hawthorne_ts, s.window = 'periodic'), ts.colour = 'blue')
+```
+
+When accounting for seasonality effects, it's clear that the September 2015 opening of the Tilikum Bridge had an effect on reducing bike ridership on the 
+Hawthorne Bridge. 
+
+### Applying linear regression models using a split-apply-combine approach
+
