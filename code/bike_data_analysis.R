@@ -5,8 +5,9 @@ library(leaflet)
 library(ggfortify)
 
 load_bridge <- function(bridge_name) {
-  bridge_data <- read_excel("data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
-             sheet = bridge_name, skip = 1)
+  bridge_data <- read_excel(
+    "data/Hawthorne Tilikum Steel daily bike counts 073118.xlsx",
+    sheet = bridge_name, skip = 1)
   bridge_data <- add_column(bridge_data, name = bridge_name) %>%
   mutate(date = as.Date(date, format = '%m/%d/%Y'))
   return(bridge_data)
