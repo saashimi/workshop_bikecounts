@@ -15,16 +15,9 @@ load_bridge <- function(bridge_name) {
   return(bridge_data)
 }
 
-tot_vs_PRCP <- function(df) {
-  lm(total ~ PRCP, data = df)
-}
-
-tot_vs_TMAX <- function(df) {
-  lm(total ~ TMAX, data = df)
-}
-
-tot_vs_TMIN <- function(df) {
-  lm(total ~ TMIN, data = df)
+tot_vs_weather <- function(df) {
+  lm(total ~ TMIN + TMAX + PRCP, data = df) %>% 
+  summary()
 }
 
 bridges <- c("Hawthorne", "Tilikum", "Steel")
@@ -50,24 +43,16 @@ all_data <- left_join(consolidated_bridge, weather_data_csv,
 
 # Nest the data
 all_data_nested <- all_data %>% 
-    group_by(name) %>% 
-    nest()
+    nest(-name)
 
 # Apply the linear regression model
-prcp_model <- all_data_nested %>% 
-    mutate(fit = purrr::map(data, tot_vs_PRCP),
-           tidy = purrr::map(fit, tidy)) %>% 
-    select(name, tidy) %>% 
-    unnest(tidy)
-
-TMAX_model <- all_data_nested %>% 
-  mutate(fit = purrr::map(data, tot_vs_TMAX),
+weather_model <- all_data_nested %>% 
+  mutate(fit = purrr::map(data, tot_vs_weather),
          tidy = purrr::map(fit, tidy)) %>% 
   select(name, tidy) %>% 
   unnest(tidy)
 
-TMIN_model <- all_data_nested %>% 
-  mutate(fit = purrr::map(data, tot_vs_TMIN),
-         tidy = purrr::map(fit, tidy)) %>% 
-  select(name, tidy) %>% 
-  unnest(tidy)
+weather_model_data <- weather_model %>% 
+  filter(term=="PRCP") %>% 
+  arrange(estimate) %>% 
+  slice(1)
