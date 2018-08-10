@@ -48,11 +48,14 @@ all_data_nested <- all_data %>%
 # Apply the linear regression model
 weather_model <- all_data_nested %>% 
   mutate(fit = purrr::map(data, tot_vs_weather),
-         tidy = purrr::map(fit, tidy),
-         glance = map(fit, glance)) %>% 
-  unnest(glance)
-  #select(name, tidy) %>% 
+         tidy = purrr::map(fit, tidy)) %>% 
+  select(name, tidy) %>%
+  unnest(tidy)
 
+  #glance = map(fit, glance)) %>% 
+  #unnest(glance)
+
+  
 weather_model_data <- weather_model %>% 
   filter(term=="PRCP") %>% 
   arrange(estimate) %>% 

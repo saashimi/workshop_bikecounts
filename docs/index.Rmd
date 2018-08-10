@@ -119,4 +119,33 @@ When accounting for seasonality effects, it's clear that the September 2015 open
 Hawthorne Bridge. 
 
 ### Applying linear regression models using a split-apply-combine approach
+#### Or: The trouble with tibbles!
 
+We learned how to nest tibbles within tibbles!
+Again, we have to load some new libraries.
+```{r, message=FALSE}
+library(purrr)
+library(broom)
+```
+
+Then, apply a linear regression to all these datafiles.
+```{r}
+# Linear regression application function
+tot_vs_weather <- function(df) {
+  lm(total ~ TMIN + TMAX + PRCP, data = df) %>% 
+  summary()
+}
+
+# Nest the data
+all_data_nested <- all_data %>% 
+    nest(-name)
+
+# Apply the linear regression model
+weather_model <- all_data_nested %>% 
+  mutate(fit = purrr::map(data, tot_vs_weather),
+         tidy = purrr::map(fit, tidy)) %>% 
+  select(name, tidy) %>%
+  unnest(tidy)
+```
+Note the `unnest(tidy)` to unpack the nested tibbles, so that it's not tibbles
+all the way down.
