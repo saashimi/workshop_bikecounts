@@ -121,11 +121,10 @@ Hawthorne Bridge.
 ### Applying linear regression models using a split-apply-combine approach
 #### Or: The trouble with tibbles!
 
-We learned how to nest tibbles within tibbles!
 
-![(No, not tribbles.)](../data/ST_TroubleWithTribbles.jpg)
+![(No, not those.)](../data/ST_TroubleWithTribbles.jpg)
 
-Again, we have to load some new libraries.
+We learned how to nest tibbles within tibbles! Again, we have to load some new libraries first.
 ```{r, message=FALSE}
 library(purrr)
 library(broom)
